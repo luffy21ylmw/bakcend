@@ -1,12 +1,34 @@
-import json
+import json,hashlib,time
 from django.shortcuts import render,HttpResponse
 from django.http import JsonResponse
+from django.db.models import F
+
 from rest_framework import views
-import rest_framework.parsers
+from rest_framework.response import Response
+from rest_framework import serializers
+
+from django.http.request import HttpRequest
+
+from api import models
+
+class Myserializers(serializers.ModelSerializer):
+    class Meta:
+        model = models.Article
+        fields = "__all__"
+        # fields = ['user', 'pwd', 'ut']
+        depth = 2
+
+class Mycomment(serializers.ModelSerializer):
+    class Meta:
+        model = models.Comment
+        fields = "__all__"
+        # fields = ['user', 'pwd', 'ut']
+        depth = 0
+
+
 
 class LoginView(views.APIView):
     def get(self,request,*args,**kwargs):
-
         ret = {
             'code':1000,
             'data':'老男孩'
@@ -16,25 +38,37 @@ class LoginView(views.APIView):
         return response
 
     def post(self,request,*args,**kwargs):
-        print(json.loads(request.body))
-        ret = {
-            'code':1000,
-            'username':'老男孩',
-            'token':'71ksdf7913knaksdasd7',
-        }
-        response = JsonResponse(ret)
-        response['Access-Control-Allow-Origin'] = "*"
-        return response
+        userinfo = json.loads(request.body)
+        # print(userinfo)
+        if 'username' in userinfo and 'password' in userinfo:
+            usr = models.Account.objects.filter(username=userinfo['username'], password=userinfo['password']).first()
+            if usr:
+                token = hashlib.md5()
+                token.update(str(time.time()).encode("utf8"))
+                token = token.hexdigest()
+                if usr.userauthtoken.token:
+                    models.UserAuthToken.objects.filter(user=usr).update(token=token)
+                else:
+                    models.UserAuthToken.objects.create(user=usr, token=token)
+                request.session[token] = {'user': userinfo['username']}
+                ret = JsonResponse({'token': token, 'username': userinfo['username'],'sta':True})
+                # ret['Access-Control-Allow-Origin'] = '*'
+                # ret['Access-Control-Allow-Headers'] = '*'
+                return ret
+        # ret = JsonResponse('用户名密码错误')
+        ret = JsonResponse({'sta':False})
+        return ret
+
 
     def options(self, request, *args, **kwargs):
         # self.set_header('Access-Control-Allow-Origin', "http://www.xxx.com")
         # self.set_header('Access-Control-Allow-Headers', "k1,k2")
         # self.set_header('Access-Control-Allow-Methods', "PUT,DELETE")
         # self.set_header('Access-Control-Max-Age', 10)
-        print(request.POST)
+        # print(request.POST)
         response = HttpResponse()
-        response['Access-Control-Allow-Origin'] = '*'
-        response['Access-Control-Allow-Headers'] = '*'
+        # response['Access-Control-Allow-Origin'] = '*'
+        # response['Access-Control-Allow-Headers'] = '*'
         # response['Access-Control-Allow-Methods'] = 'PUT'
         return response
 
@@ -58,13 +92,49 @@ class CoursesView(views.APIView):
                 ]
             }
         response = JsonResponse(ret)
-        response['Access-Control-Allow-Origin'] = "*"
+        # response['Access-Control-Allow-Origin'] = "*"
         return response
 
 
+class NewsView(views.APIView):
+
+    def get(self,request,*args,**kwargs):
+        pk = kwargs.get('pk')
+        if pk:
+            article = models.Article.objects.filter(pk=pk).first()
+            ser = Myserializers(instance=article, many=False)
+            ser_c = models.Comment.objects.filter(article=article)
+            ser_com = Mycomment(instance=ser_c, many=True)
+            print(ser_com.data)
+        else:
+            article = models.Article.objects.all()
+            ser = Myserializers(instance=article, many=True)
+            print(ser.data)
 
 
+        return Response(ser.data)
 
+
+class CommentView(views.APIView):
+    def post(self,request,*args,**kwargs):
+        token = request.data.get('token')
+        id = request.data.get('id')
+        child_id = request.data.get('child_id')
+        if token and (id or child_id):
+            usr_token_obj = models.UserAuthToken.objects.filter(token=token).first()
+            usr_obj = models.Account.objects.filter(userauthtoken=usr_token_obj).first()
+            if usr_obj and id:
+                models.Comment.objects.create(article_id=id,content=request.data.get('comment'),
+                                              account=usr_obj)
+                models.Article.objects.filter(id=id).update(comment_num=F('comment_num')+1)
+            if usr_obj and child_id:
+                pass
+        return HttpResponse('ok')
+
+    def options(self, request, *args, **kwargs):
+        response = HttpResponse('ok')
+
+        return response
 
 
 

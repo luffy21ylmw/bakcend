@@ -15,10 +15,13 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from  api import views
+from api import views as api
 urlpatterns = [
-    # url(r'^admin/', admin.site.urls),
-    url(r'^login/', views.LoginView.as_view()),
-    url(r'^courses/$', views.CoursesView.as_view()),
-    url(r'^courses/(?P<pk>\d+)\.(?P<format>[a-z0-9]+)$', views.CoursesView.as_view()),
+    url(r'^admin/', admin.site.urls),
+    url(r'^login/', api.LoginView.as_view()),
+    url(r'^courses/$', api.CoursesView.as_view()),
+    url(r'^news/$', api.NewsView.as_view()),
+    url(r'^courses/(?P<pk>\d+)\.(?P<format>[a-z0-9]+)$', api.CoursesView.as_view()),
+    url(r'^news/(?P<pk>\d+)\.(?P<format>[a-z0-9]+)$', api.NewsView.as_view()),
+    url(r'^comment/$', api.CommentView.as_view()),
 ]

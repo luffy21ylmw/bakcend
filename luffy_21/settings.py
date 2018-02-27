@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'api.plugins.myauthmidware.Myloginauth',
 ]
 
 ROOT_URLCONF = 'luffy_21.urls'
@@ -80,6 +81,16 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
+
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'mydatabase',
+    #     'USER': 'mydatabaseuser',
+    #     'PASSWORD': 'mypassword',
+    #     'HOST': '127.0.0.1',
+    #     'PORT': '3306',
+    # }
+
 }
 
 
@@ -120,3 +131,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+REST_FRAMEWORK = {
+    'UNAUTHENTICATED_USER': None,
+    'UNAUTHENTICATED_TOKEN': None,
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        'api.plugins.auth.GlobalAuth',
+    ],
+    'DEFAULT_PERMISSION_CLASSES':[
+
+    ],
+    'DEFAULT_THROTTLE_RATES':{
+        'wdp_anon':'5/minute',
+        'wdp_user':'10/minute',
+
+    }
+}
