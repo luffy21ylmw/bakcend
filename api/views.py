@@ -4,6 +4,8 @@ from django.http import JsonResponse
 from rest_framework import views
 import rest_framework.parsers
 
+from api import models
+
 class LoginView(views.APIView):
     def get(self,request,*args,**kwargs):
 
@@ -44,19 +46,24 @@ class CoursesView(views.APIView):
     def get(self,request,*args,**kwargs):
         pk = kwargs.get('pk')
         if pk:
-            ret = {
-                'title':"标题标题标题",
-                'summary':'老师，太饿了。怎么还不下课'
-            }
+            ret ={"概述":[],"章节":[],"评价":[],"问题":[]}
+            courselist = models.Course.objects.filter(id=pk).values('name',"coursedetail__course_slogan","brief")
+            self.dispatch()
+
         else:
             ret = {
-                'code':1000,
-                'courseList':[
-                     { "name": '21天学会Pytasdfhon', 'id': 1},
-                     { "name": '23天学会Pytasdfhon', 'id': 2},
-                     { "name": '24天学会Pytasdfhon', 'id': 3},
-                ]
+                'code': 1000,
+                'courseList': []
             }
+            courselist=models.Course.objects.all()
+            for course in courselist:
+                ret['courseList'].append({
+                    'id':course.id,
+                    'course_img':course.course_img,
+                    'name':course.name,
+                    'brief':course.brief,
+                    'level':course.get_level_display()
+                })
         response = JsonResponse(ret)
         response['Access-Control-Allow-Origin'] = "*"
         return response
