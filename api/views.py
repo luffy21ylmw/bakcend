@@ -1,4 +1,5 @@
 import json,hashlib,time
+from pprint import pprint
 from django.shortcuts import render,HttpResponse
 from django.http import JsonResponse
 from django.db.models import F
@@ -100,19 +101,27 @@ class NewsView(views.APIView):
 
     def get(self,request,*args,**kwargs):
         pk = kwargs.get('pk')
+        total_dic = {}
         if pk:
             article = models.Article.objects.filter(pk=pk).first()
             ser = Myserializers(instance=article, many=False)
-            ser_c = models.Comment.objects.filter(article=article)
+            ser_c = models.Comment.objects.filter(content_type_id=8,object_id=pk)
             ser_com = Mycomment(instance=ser_c, many=True)
-            print(ser_com.data)
+            article.view_num += 1
+            article.save()
+            # print(ser_com.data)
         else:
             article = models.Article.objects.all()
             ser = Myserializers(instance=article, many=True)
-            print(ser.data)
+            ser_com = False
+            # print(ser.data)
+        total_dic['ser'] = ser.data
+        if ser_com:
+            total_dic['com'] = ser_com.data
+        # pprint(total_dic)
 
 
-        return Response(ser.data)
+        return Response(total_dic)
 
 
 class CommentView(views.APIView):
@@ -121,21 +130,74 @@ class CommentView(views.APIView):
         id = request.data.get('id')
         child_id = request.data.get('child_id')
         if token and (id or child_id):
+            # article_obj = models.Article.objects.filter(id=id)
             usr_token_obj = models.UserAuthToken.objects.filter(token=token).first()
             usr_obj = models.Account.objects.filter(userauthtoken=usr_token_obj).first()
             if usr_obj and id:
-                models.Comment.objects.create(article_id=id,content=request.data.get('comment'),
+                models.Comment.objects.create(content_type_id=8,object_id=id,content=request.data.get('comment'),
                                               account=usr_obj)
                 models.Article.objects.filter(id=id).update(comment_num=F('comment_num')+1)
             if usr_obj and child_id:
                 pass
-        return HttpResponse('ok')
+            return Response('ok')
+        else:
+            return Response('nok')
 
     def options(self, request, *args, **kwargs):
-        response = HttpResponse('ok')
+        response = Response('ok')
 
         return response
 
 
+class AgreeView(views.APIView):
+    def post(self,request,*args,**kwargs):
+        print(request.data)
+        token = request.data.get('token')
+        id = request.data.get('id')
+        if token and id:
+            artecle_obj = models.Article.objects.filter(id=id).first()
+            usr_token_obj = models.UserAuthToken.objects.filter(token=token).first()
+            usr_obj = models.Account.objects.filter(userauthtoken=usr_token_obj).first()
+            if usr_obj and id:
+                exist_agree_obj = models.Comment.objects.filter(content_type_id=8,account=usr_obj,object_id=id)
+                if exist_agree_obj:
+                    models.Comment.objects.filter(content_type_id=8,object_id=id, account=usr_obj).update(
+                        agree_number=F('agree_number') - 1)
+                    models.Article.objects.filter(id=id).update(agree_num=F('agree_num')-1)
+                    exist_agree_obj.delete()
+                else:
+                    models.Comment.objects.create(content_object=artecle_obj,account=usr_obj)
+                    models.Article.objects.filter(id=id).update(agree_num=F('agree_num')+1)
+                    models.Comment.objects.filter(content_type_id=8,object_id=id,account=usr_obj).update(agree_number=F('agree_number')+1)
+            return Response('ok')
+        return Response('nok')
+
+    def options(self, request, *args, **kwargs):
+        response = Response()
+        return response
 
 
+class CollectView(views.APIView):
+    def post(self, request, *args, **kwargs):
+        print(request.data)
+        token = request.data.get('token')
+        id = request.data.get('id')
+        if token and id:
+            usr_token_obj = models.UserAuthToken.objects.filter(token=token).first()
+            usr_obj = models.Account.objects.filter(userauthtoken=usr_token_obj).first()
+            if usr_obj and id:
+                article_obj = models.Article.objects.filter(id=id).first()
+                exist_collect_obj = models.Collection.objects.filter(content_type_id=8,object_id=id,account=usr_obj)
+                print(exist_collect_obj)
+                if exist_collect_obj:
+                    exist_collect_obj.delete()
+                    models.Article.objects.filter(id=id).update(collect_num=F('collect_num') - 1)
+                else:
+                    models.Collection.objects.create(content_object=article_obj, account=usr_obj)
+                    models.Article.objects.filter(id=id).update(collect_num=F('collect_num')+1)
+            return Response('ok')
+        return Response('nok')
+
+    def options(self, request, *args, **kwargs):
+        response = HttpResponse()
+        return response

@@ -292,14 +292,14 @@ class Article(models.Model):
     agree_num = models.SmallIntegerField(default=0, verbose_name="点赞数")
     view_num = models.SmallIntegerField(default=0, verbose_name="观看数")
     collect_num = models.SmallIntegerField(default=0, verbose_name="收藏数")
-
+    collection = GenericRelation('Collection')
     # tags = models.ManyToManyField("Tags", blank=True, verbose_name="标签")
     date = models.DateTimeField(auto_now_add=True, verbose_name="创建日期")
 
     position_choices = ((0, '信息流'), (1, 'banner大图'), (2, 'banner小图'))
     position = models.SmallIntegerField(choices=position_choices, default=0, verbose_name="位置")
 
-    # comment = GenericRelation("Comment")  # 用于GenericForeignKey反向查询， 不会生成表字段，切勿删除，如有疑问请联系老村长
+    comment = GenericRelation("Comment")  # 用于GenericForeignKey反向查询， 不会生成表字段，切勿删除，如有疑问请联系老村长
 
     def __str__(self):
         return "%s-%s" % (self.source, self.title)
@@ -320,11 +320,11 @@ class Collection(models.Model):
 
 class Comment(models.Model):
     """通用的评论表"""
-    # content_type = models.ForeignKey(ContentType, blank=True, null=True, verbose_name="类型")
-    # object_id = models.PositiveIntegerField(blank=True, null=True)
-    # content_object = GenericForeignKey('content_type', 'object_id')
+    content_type = models.ForeignKey(ContentType, blank=True, null=True, verbose_name="类型")
+    object_id = models.PositiveIntegerField(blank=True, null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
     # FK(Article)
-    article = models.ForeignKey('Article')
+    # article = models.ForeignKey('Article')
     p_node = models.ForeignKey("self", blank=True, null=True, verbose_name="父级评论")
     content = models.TextField(max_length=1024)
     account = models.ForeignKey("Account", verbose_name="会员名")

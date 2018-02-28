@@ -24,4 +24,6 @@ urlpatterns = [
     url(r'^courses/(?P<pk>\d+)\.(?P<format>[a-z0-9]+)$', api.CoursesView.as_view()),
     url(r'^news/(?P<pk>\d+)\.(?P<format>[a-z0-9]+)$', api.NewsView.as_view()),
     url(r'^comment/$', api.CommentView.as_view()),
+    url(r'^agree/$', api.AgreeView.as_view()),
+    url(r'^collect/$', api.CollectView.as_view()),
 ]
