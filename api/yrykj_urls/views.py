@@ -47,6 +47,7 @@ class LoginView(views.APIView):
                 token = hashlib.md5()
                 token.update(str(time.time()).encode("utf8"))
                 token = token.hexdigest()
+                print(usr.__dict__)
                 if usr.userauthtoken.token:
                     models.UserAuthToken.objects.filter(user=usr).update(token=token)
                 else:
@@ -128,17 +129,18 @@ class CommentView(views.APIView):
     def post(self,request,*args,**kwargs):
         token = request.data.get('token')
         id = request.data.get('id')
-        child_id = request.data.get('child_id')
-        if token and (id or child_id):
+        parent_id = request.data.get('parent_id')
+        if token and (id or parent_id):
             # article_obj = models.Article.objects.filter(id=id)
             usr_token_obj = models.UserAuthToken.objects.filter(token=token).first()
             usr_obj = models.Account.objects.filter(userauthtoken=usr_token_obj).first()
-            if usr_obj and id:
+            if usr_obj and id and not parent_id:
                 models.Comment.objects.create(content_type_id=8,object_id=id,content=request.data.get('comment'),
                                               account=usr_obj)
                 models.Article.objects.filter(id=id).update(comment_num=F('comment_num')+1)
-            if usr_obj and child_id:
-                pass
+            if usr_obj and id and parent_id:
+                models.Comment.objects.create(content_type_id=8,object_id=id,content=request.data.get('comment'),
+                                              account=usr_obj,p_node_id=id)
             return Response('ok')
         else:
             return Response('nok')

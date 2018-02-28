@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from api import views as api
+from api.yrykj_urls import views as api
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^login/', api.LoginView.as_view()),
