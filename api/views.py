@@ -2,6 +2,8 @@ import json
 from django.shortcuts import render,HttpResponse
 from django.http import JsonResponse
 from rest_framework import views
+from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers
 import rest_framework.parsers
 
 from api import models
@@ -40,15 +42,54 @@ class LoginView(views.APIView):
         # response['Access-Control-Allow-Methods'] = 'PUT'
         return response
 
+class CourseSerilizer(ModelSerializer):
+    level=serializers.SerializerMethodField()
+    class Meta:
+        model=models.Course
+        fields=['name','brief','level']
+        depath=2
+    def get_level(self,obj):
+        return obj.get_level_display()
+
+class CourseDetailSerilizer(ModelSerializer):
+    recommend_courses=serializers.SerializerMethodField()
+    class Meta:
+        model = models.CourseDetail
+        fields = ['course_slogan', 'video_brief_link','why_study','what_to_study_brief','career_improvement','prerequisite','hours','recommend_courses']
+        depath = 2
+    def get_recommend_courses(self,obj):
+        li=[]
+        for obj in obj.recommend_courses.all():
+            li.append(obj.name)
+        return li
 
 class CoursesView(views.APIView):
 
     def get(self,request,*args,**kwargs):
         pk = kwargs.get('pk')
         if pk:
-            ret ={"概述":[],"章节":[],"评价":[],"问题":[]}
-            courselist = models.Course.objects.filter(id=pk).values('name',"coursedetail__course_slogan","brief")
-            self.dispatch()
+            ret ={"概述":{},"章节":{},"评价":{},"问题":{}}
+            courselist = models.Course.objects.filter(id=pk)
+            course_detail = models.CourseDetail.objects.filter(course_id=pk)
+            course_ser=CourseSerilizer(instance=courselist,many=True)
+            course_detail_ser=CourseDetailSerilizer(instance=course_detail,many=True)
+
+            for course in course_ser.data:
+                ret["概述"]["name"]=course["name"]
+                ret["概述"]['课程概述']=course['brief']
+                ret["概述"]['level']=course['level']
+
+            for course_detail in course_detail_ser.data:
+                ret["概述"]["slogan"]=course_detail["course_slogan"]
+                ret["概述"]["学习时间"] =course_detail["hours"]
+                ret["概述"]["why_study"] = course_detail["why_study"]
+                ret["概述"]["what_to_study_brief"] = course_detail["what_to_study_brief"]
+                ret["概述"]["career_improvement"] = course_detail["career_improvement"]
+                ret["概述"]["prerequisite"] = course_detail["prerequisite"]
+                ret["概述"]["recommend_courses"] = course_detail["recommend_courses"]
+
+            print(ret)
+
 
         else:
             ret = {
