@@ -1,4 +1,4 @@
-import json
+﻿import json
 from django.shortcuts import render,HttpResponse
 from django.http import JsonResponse
 from rest_framework import views
@@ -19,15 +19,26 @@ class LoginView(views.APIView):
         response['Access-Control-Allow-Origin'] = "*"
         return response
 
-    def post(self,request,*args,**kwargs):
-        print(json.loads(request.body))
+     def post(self, request, *args, **kwargs):
         ret = {
-            'code':1000,
-            'username':'老男孩',
-            'token':'71ksdf7913knaksdasd7',
+            'code': 1000,
+            'username': '',
+            'token': ''
         }
+
+        body = request.body
+        read_body = json.loads(body)
+
+        user_obj = models.Account.objects.filter(**read_body).first()
+
+        if user_obj:
+            print(user_obj)
+            ret['username'] = user_obj.username
+            ret['token'] = user_obj.userauthtoken.token
+        else:
+            ret['code'] = 1001
         response = JsonResponse(ret)
-        response['Access-Control-Allow-Origin'] = "*"
+        response['Access-Control-Allow-Origin'] = '*'
         return response
 
     def options(self, request, *args, **kwargs):
