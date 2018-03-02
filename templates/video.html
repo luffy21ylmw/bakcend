@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Title</title>
+</head>
+<body>
+
+<div id="cc_A5FEB0EA05F2100B9C33DC5901307461">
+
+    {#    <paramname="allowFullScreen"value="true" />#}
+    {#    <paramname="allowScriptAccess"value="always" />#}
+    {#    <embed...name="cc_A5FEB0EA05F2100B9C33DC5901307461"allowFullScreen="true"#}
+    {#    allowScriptAccess="always"... />#}
+</div>
+
+
+<script type="text/javascript">
+    var player1 = getSWF("cc_A5FEB0EA05F2100B9C33DC5901307461");
+
+    functionon_cc_player_init(vid, objectID)
+    {
+        var player = getSWF(objectID);
+        console.info(player1 == player);
+        player.start();
+    }
+
+    functiongetSWF(swfID)
+    {
+        if (window.document[swfID]) {
+            return window.document[swfID];
+        }
+        elseif(navigator.appName.indexOf("Microsoft") == -1)
+        {
+            if (document.embeds && document.embeds[swfID]) {
+                return document.embeds[swfID];
+            }
+        }
+    else
+        {
+            return document.getElementById(swfID);
+        }
+    }
+</script>
+</body>
+</html>

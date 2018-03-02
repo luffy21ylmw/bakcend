@@ -26,4 +26,6 @@ urlpatterns = [
     url(r'^comment/$', api.CommentView.as_view()),
     url(r'^agree/$', api.AgreeView.as_view()),
     url(r'^collect/$', api.CollectView.as_view()),
+    url(r'^shopping_car/$', api.ShoppingCarView.as_view()),
+    url(r'^course/buy/$', api.Course_buy.as_view()),
 ]
